@@ -1,0 +1,6 @@
+__pycache__/
+files/
+src/highball
+src/**/*.o
+src/proto/*.h
+stuff/

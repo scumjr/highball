@@ -1,0 +1,22 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <title>Media Player</title>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link href="/static/bootstrap.min.css" rel="stylesheet" integrity="sha384-KK94CHFLLe+nY2dmCWGMq91rCGa5gtU4mk92HdvYe+M/SXH301p5ILy+dN9+nJOZ" crossorigin="anonymous">
+  </head>
+  <body>
+    <div class="position-absolute top-50 start-50 translate-middle w-100">
+      <div class="container-xxl">
+	<figure id="videoContainer" style="width: 100%; background-color: #f5f7ff; border: 1px solid black; border-radius: 5px;">
+	  <video id="video" controls preload="auto" autoplay="true" style="width: 100%">
+	    <source src="{{ mp3 }}" type="audio/mpeg">-->
+	      <track label="French" kind="subtitles" srclang="fr" src="{{ subtitles }}" default>
+	  </video>
+	</figure>
+      </div>
+    </div>
+    <script src="/static/video-player.js"></script>
+  </body>
+</html>
