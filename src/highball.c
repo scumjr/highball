@@ -78,7 +78,8 @@ void resultHandler(const char *serialized_proto, int length, void *callback_hand
         break;
     }
     case speech::soda::chrome::SodaResponse::AUDIO_LEVEL: {
-        // fprintf(stderr, "[*] AUDIO_LEVEL\n");
+        // speech::soda::chrome::SodaAudioLevelInfo info = response.audio_level_info();
+        // fprintf(stderr, "[*] AUDIO_LEVEL %f\n", info.rms());
         break;
     }
     case speech::soda::chrome::SodaResponse::RECOGNITION: {
