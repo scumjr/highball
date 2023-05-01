@@ -75,17 +75,20 @@ if __name__ == "__main__":
     script_dir = os.path.dirname(os.path.realpath(__file__))
 
     if len(sys.argv) == 2:
-        path = sys.argv[1]
+        path = os.path.abspath(sys.argv[1])
     else:
         path = os.path.abspath(os.path.join(script_dir, "../../audio"))
+
+    os.chdir(script_dir)
 
     with open("job.pid", "w") as fp:
         fp.write(f"{os.getpid()}")
 
-    path = os.path.abspath(path)
-    os.chdir(script_dir)
     jobs = list_jobs(path)
     for name in jobs:
         run_job(path, name)
 
-    os.unlink("job.pid")
+    try:
+        os.remove("job.pid")
+    except FileNotFoundError:
+        pass
