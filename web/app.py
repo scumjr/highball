@@ -92,10 +92,29 @@ def index():
         return render_template("index.html", lines=lines, jobs=jobs)
 
 
-@app.route("/audio/<filename>")
+def delete_files(filename):
+    assert "/" not in filename
+
+    # order is important (prevent run_jobs.py from detecting an incomplete job)
+    extensions = [".mp3", ".mp4", ".wav", ".json", ".txt", ".srt"]
+
+    root, _ = os.path.splitext(filename)
+    files = [os.path.join(MEDIA_PATH, f"{root}{ext}") for ext in extensions]
+    for filename in files:
+        try:
+            os.remove(filename)
+        except FileNotFoundError:
+            pass
+    return ""
+
+
+@app.route("/audio/<filename>", methods=["GET", "DELETE"])
 def audio(filename):
-    as_attachment = "download" in request.args
-    return send_from_directory(MEDIA_PATH, filename, as_attachment=as_attachment)
+    if request.method == "DELETE":
+        return delete_files(filename)
+    else:
+        as_attachment = "download" in request.args
+        return send_from_directory(MEDIA_PATH, filename, as_attachment=as_attachment)
 
 
 @app.route("/player/<filename>")

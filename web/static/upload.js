@@ -51,3 +51,23 @@ const appendAlert = (message, type) => {
   ].join('');
   alertPlaceholder.append(wrapper);
 }
+
+function delete_files() {
+  var filename = document.getElementById('delete-filename').textContent;
+  var xhr = new XMLHttpRequest();
+  xhr.addEventListener("load", (event) => window.location.reload(), false);
+  xhr.open("DELETE", "/audio/" + filename);
+  xhr.send({});
+}
+
+function add_event_delete_file_modal() {
+    // set filenames automatically
+    var el = document.getElementById('delete-modal');
+    el.addEventListener('show.bs.modal', function (event) {
+	var filename = event.relatedTarget.getAttribute('data-id');
+	var el = document.getElementById('delete-filename');
+	el.textContent = filename.replace(/\.[^.]+/, '.*');
+    });
+}
+
+add_event_delete_file_modal();
