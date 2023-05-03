@@ -51,7 +51,8 @@
 		</td>
 		<td>
 		  {% if ".txt" in files -%}
-		  <a href="audio/{{ files['.txt'] | urlencode }}">{{ files[".txt"] }}</a>
+		  <a href="audio/{{ files['.txt'] | urlencode }}"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor"  viewBox="0 0 16 16"><use xlink:href="/static/clock.svg#clock" /></svg></a>
+		  <a href="audio/{{ files['.txt'] | urlencode }}?strip">{{ files[".txt"] }}</a>
 		  {% endif -%}
 		</td>
 		<td class="text-center">

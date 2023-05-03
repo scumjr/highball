@@ -2,6 +2,7 @@
 
 import os
 import pathlib
+import re
 import sys
 from flask import Flask, Response, render_template, request, send_from_directory
 from werkzeug.utils import secure_filename
@@ -108,13 +109,26 @@ def delete_files(filename):
     return ""
 
 
+def strip_timestamps(filename, as_attachment):
+    with open(os.path.join(MEDIA_PATH, filename)) as fp:
+        data = fp.read()
+    data = re.sub(r"\[.*\]\s+", "", data)
+    headers = {}
+    if as_attachment:
+        headers["Content-Disposition"] = f"attachment; filename={filename}"
+    return Response(data, mimetype="text/plain", headers=headers)
+
+
 @app.route("/audio/<filename>", methods=["GET", "DELETE"])
 def audio(filename):
     if request.method == "DELETE":
         return delete_files(filename)
     else:
         as_attachment = "download" in request.args
-        return send_from_directory(MEDIA_PATH, filename, as_attachment=as_attachment)
+        if os.path.splitext(filename)[1] == ".txt" and "strip" in request.args:
+            return strip_timestamps(filename, as_attachment)
+        else:
+            return send_from_directory(MEDIA_PATH, filename, as_attachment=as_attachment)
 
 
 @app.route("/player/<filename>")

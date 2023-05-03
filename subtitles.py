@@ -45,15 +45,32 @@ def generate_subtitles(words, lang="fr-FR"):
     return subtitles
 
 
+def fix_punctuation(sentence):
+    sentence = re.sub(r"([,\.])([\w])", r"\1 \2", sentence)
+    sentence = re.sub(r"([\w])([;:?!])", r"\1 \2", sentence)
+    sentence = re.sub(r"([\.?!])\s+", r"\1\n\n", sentence)
+    return sentence
+
+
 def generate_chat(words):
-    words = " ".join([sentence for _, sentence in words])
-    words = re.sub("\n", " ", words)
-    words = re.sub(" +", " ", words)
-    # fix french punctuation
-    words = re.sub(r"([,\.])([\w])", r"\1 \2", words)
-    words = re.sub(r"([\w])([;:?!])", r"\1 \2", words)
-    words = re.sub(r"([\.?!])\s+", r"\1\n\n", words)
-    print(words)
+    sentences = []
+
+    current = []
+    for timestamp, word in words:
+        if not current:
+            current = [ts_to_time(timestamp).split(".")[0]]
+        word = word.strip()
+        current.append(word)
+        if word.endswith((".", "?", "!")):
+            timestamp = current[0]
+            sentence = fix_punctuation(" ".join(current[1:]))
+            sentences.append(f"[{timestamp}] {sentence}")
+            current = []
+
+    if current:
+        sentences.append(fix_punctuation(sentence))
+
+    print("\n\n".join(sentences))
 
 
 def ts_to_time(timestamp, separator="."):
