@@ -42,7 +42,7 @@
 		{% endif -%}
 		<td>
 		  {% if ".srt" in files -%}
-		  <a href="audio/{{ files['.srt'] | urlencode }}">{{ files[".srt"] }}</a>
+		  <a href="audio/{{ files['.srt'] | urlencode }}?download">{{ files[".srt"] }}</a>
 		  {% else -%}
 		  <div class="spinner-border spinner-border-sm" role="status">
                     <span class="visually-hidden">Loading...</span>

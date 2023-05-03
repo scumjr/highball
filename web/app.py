@@ -94,7 +94,8 @@ def index():
 
 @app.route("/audio/<filename>")
 def audio(filename):
-    return send_from_directory(MEDIA_PATH, filename)
+    as_attachment = "download" in request.args
+    return send_from_directory(MEDIA_PATH, filename, as_attachment=as_attachment)
 
 
 @app.route("/player/<filename>")
