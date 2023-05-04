@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" data-bs-theme="dark">
   <head>
     <title>Transcript</title>
     <meta charset="utf-8">
@@ -8,114 +8,85 @@
   </head>
   <body>
 
-    <header class="p-3 mb-3 border-bottom">
-      <nav class="navbar navbar-expand-lg">
-	<div class="container">
-	  <div class="d-flex flex-wrap align-items-center justify-content-center justify-content-lg-start">
-            <ul class="nav nav-underline">
-              <li class="nav-item"><a data-bs-toggle="tab" href="#transcripts" role="button" class="nav-link active px-2" aria-controls="transcripts" aria-selected="true">Transcripts</a></li>
-              <li class="nav-item"><a data-bs-toggle="tab" href="#upload" role="button" class="nav-link px-2">Upload</a></li>
-	      <li class="nav-item"><a data-bs-toggle="tab" href="#help" role="button" class="nav-link px-2">Help</a></li>
-            </ul>
-	  </div>
+    <header>
+      <div class="container border-bottom">
+        <div class="py-4">
+          <h4 class="text-white">Transcripts</h4>
 	</div>
-      </nav>
+      </div>
     </header>
 
-    <div class="tab-content container-fluid">
+    <div class="tab-content container-fluid pt-4">
 
-      <div class="tab-pane show active" id="transcripts">
-	<div class="container">
-	  <table class="table table-bordered table-hover">
-	    <thead class="table-light">
-	      <tr><th>Media</th><th colspan="2">Subtitle</th><th>Action</th></tr>
-	    </thead>
-	    <tbody class="table-group-divider">
-	      {% for files in lines -%}
-	      <tr>
-		{% if ".mp4" in files -%}
-		<td><a href="player/{{ files['.mp4'] | urlencode }}">{{ files[".mp4"] }}</a></td>
-		{% elif ".mp3" in files -%}
-		<td><a href="player/{{ files['.mp3'] | urlencode }}">{{ files[".mp3"] }}</a></td>
-		{% else -%}
-		<td></td>
-		{% endif -%}
-		<td>
-		  {% if ".srt" in files -%}
-		  <a href="audio/{{ files['.srt'] | urlencode }}?download">{{ files[".srt"] }}</a>
+      <div class="container border-bottom">
+	<div class="row">
+	  <div class="col-7">
+      	    <table class="table table-borderless table-hover">
+	      <thead>
+	      </thead>
+	      <tbody class="table-group-divider">
+		{% for ((thumbnail, media)) in lines -%}
+		<tr>
+		  {% if thumbnail -%}
+		  <td><a href="player/{{ media | urlencode }}"><img src="audio/{{ thumbnail | urlencode }}" class="rounded"/></a></td>
+		  <td class="align-middle"><a href="player/{{ media | urlencode }}">{{ media }}</a></td>
 		  {% else -%}
-		  <div class="spinner-border spinner-border-sm" role="status">
-                    <span class="visually-hidden">Loading...</span>
-                  </div>
+		  <td><div class="align-middle text-center"><div class="spinner-border m-1" role="status"><span class="visually-hidden">Loading...</span></div></div></td>
+		  <td class="align-middle">{{ media }}</td>
 		  {% endif -%}
-		</td>
-		<td>
-		  {% if ".txt" in files -%}
-		  <a href="audio/{{ files['.txt'] | urlencode }}"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor"  viewBox="0 0 16 16"><use xlink:href="/static/clock.svg#clock" /></svg></a>
-		  <a href="audio/{{ files['.txt'] | urlencode }}?strip">{{ files[".txt"] }}</a>
-		  {% endif -%}
-		</td>
-		<td class="text-center">
-		  <button type="button" class="btn btn-outline-secondary btn-sm"  data-bs-toggle="modal" data-bs-target="#delete-modal" data-id="{{ files.values() | first }}">
-		    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor"  viewBox="0 0 16 16">
-		      <use xlink:href="/static/trash.svg#trash" />
-		    </svg>
-		  </button>
-		</td>
-	      </tr>
-	      {% endfor %}
-	    </tbody>
-	  </table>
-
-	  {% if jobs %}
-	  <div class="alert alert-info" role="alert">
-	    A transcription job is running in background. Wait a bit for the result...
+		</tr>
+		{% endfor %}
+	      </tbody>
+	    </table>
 	  </div>
-	  {% endif %}
 
-	  <div class="modal fade" id="delete-modal" tabindex="-1" aria-labelledby="delete-modal-label" aria-hidden="true">
-	    <div class="modal-dialog  modal-dialog-centered">
-	      <div class="modal-content">
-		<div class="modal-header">
-		  <h5 class="modal-title" id="exampleModalLabel">Delete files</h5>
-		  <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-		</div>
-		<div class="modal-body">
-		  Are you sure you want to delete the files <tt id="delete-filename"></tt> permanently?
-		</div>
-		<div class="modal-footer">
-		  <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-		  <button type="button" class="btn btn-primary" onclick="delete_files();">Delete files</button>
+	  <div class="col-5">
+	    <div class="container mx-auto">
+	      <div class="mb-3">
+		<p>Upload a <tt>.mp3</tt> or <tt>.mp4</tt> media file to start the transcription process. Please note that <tt>.mp3</tt> (audio) files are preferred since they're lighter than <tt>.mp4</tt> (video) files.</p>
+		<form enctype="multipart/form-data" method="post" id="upload_form" class="p-4 row g-2 border rounded-3 bg-body-tertiary">
+		  <div class="col-auto">
+		    <input class="form-control" name="file" type="file" id="file" />
+		  </div>
+		  <div class="col-auto">
+		    <button type="button" class="btn btn-primary mb-3" value="Upload .mp3 or .mp4 file" onclick="uploadFile();">Upload</button>
+		  </div>
+		</form>
+		<progress id="progressBar" value="0" max="100" style="width: 100%; display: none;"></progress>
+	      </div>
+	      <div id="upload_alert"></div>
+	    </div>
+	  </div>
+	</div>
+
+	<div class="tab-pane show active" id="transcripts">
+	  <div class="container">
+
+	    {% if jobs %}
+	    <div class="alert alert-info" role="alert">
+	      A transcription job is running in background. Wait a bit for the result...
+	    </div>
+	    {% endif %}
+
+	    <div class="modal fade" id="delete-modal" tabindex="-1" aria-labelledby="delete-modal-label" aria-hidden="true">
+	      <div class="modal-dialog  modal-dialog-centered">
+		<div class="modal-content">
+		  <div class="modal-header">
+		    <h5 class="modal-title" id="exampleModalLabel">Delete files</h5>
+		    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+		  </div>
+		  <div class="modal-body">
+		    Are you sure you want to delete the files <tt id="delete-filename"></tt> permanently?
+		  </div>
+		  <div class="modal-footer">
+		    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+		    <button type="button" class="btn btn-primary" onclick="delete_files();">Delete files</button>
+		  </div>
 		</div>
 	      </div>
 	    </div>
+
 	  </div>
-
-	</div>
-      </div>
-
-      <div class="tab-pane" id="upload">
-	<div class="container col-md-10 mx-auto col-lg-5">
-	  <div class="mb-3">
-	    <!-- p-4 p-md-5 border rounded-3 bg-body-tertiary -->
-	    <p>Upload a <tt>.mp3</tt> or <tt>.mp4</tt> media file to start the transcription process. Please note that <tt>.mp3</tt> (audio) files are preferred since they're lighter than <tt>.mp4</tt> (video) files.</p>
-	    <form enctype="multipart/form-data" method="post" id="upload_form" class="p-4 row g-2 border rounded-3 bg-body-tertiary">
-	      <div class="col-auto">
-		<input class="form-control" name="file" type="file" id="file" />
-	      </div>
-	      <div class="col-auto">
-		<button type="button" class="btn btn-primary mb-3" value="Upload .mp3 or .mp4 file" onclick="uploadFile();">Upload</button>
-	      </div>
-	    </form>
-	    <progress id="progressBar" value="0" max="100" style="width: 100%; display: none;"></progress>
-	  </div>
-	  <div id="upload_alert"></div>
-	</div>
-      </div>
-
-      <div class="tab-pane" id="help">
-	<div class="container text-center">
-	  HELP
 	</div>
       </div>
 

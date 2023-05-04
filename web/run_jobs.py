@@ -2,32 +2,25 @@
 
 """
 Transcription pipeline, runs one job at a time.
-
-.mp4/.mp3 => .wav => .json => .srt, .txt
 """
 
+import logging
 import os
 import pathlib
+import re
 import subprocess
 import sys
 
+from collections import namedtuple
 
-def list_directory(path):
-    extensions = [".mp4", ".mp3", ".wav", ".json", ".srt"]
-    files = os.listdir(path)
-    files = [name for name in files if pathlib.PurePosixPath(name).suffix in extensions]
-    names = list(set([pathlib.PurePosixPath(name).stem for name in files]))
+Job = namedtuple("Job", "output_ext input_ext function")
 
-    return names
+INPUT_EXTS = ["mp3", "mp4"]
+OUTPUT_EXTS = ["json", "png", "srt", "txt", "wav"]
 
 
-def list_jobs(path):
-    names = list_directory(path)
-    return [name for name in names if not os.path.exists(os.path.join(path, f"{name}.srt"))]
-
-
-def run_job_convert_audio(mp3, wav):
-    args = ["ffmpeg", "-i", mp3, "-ar", "44100", wav]
+def run_job_convert_audio(media_path, wav):
+    args = ["ffmpeg", "-loglevel", "error", "-i", media_path, "-ar", "44100", wav]
     subprocess.run(args)
 
 
@@ -55,23 +48,62 @@ def run_job_chat(json, txt):
         subprocess.run(args, stdout=fp)
 
 
+def run_job_thumbnail(media_path, png, position=5):
+    args = ["ffmpeg", "-loglevel", "error",
+            "-accurate_seek", "-ss", f"{position}"]
+    if media_path.endswith(".mp3"):
+        args += ["-f", "lavfi", "-i", "color=c=black"]
+    args += ["-i", media_path, "-frames:v", "1", "-s", "128x80", png]
+    subprocess.run(args)
+
+
 def run_job(path, name):
-    extensions = ["mp4", "mp3", "wav", "json", "srt", "txt"]
+    """
+    Generate subtitles, transcript, thumbnail, etc. from an audio or video file.
+    """
+
+    logging.debug(f'running job "{name}"')
+
+    extensions = INPUT_EXTS + OUTPUT_EXTS
     paths = dict([(ext, os.path.join(path, f"{name}.{ext}")) for ext in extensions])
 
-    if not os.path.exists(paths["srt"]):
-        if not os.path.exists(paths["json"]):
-            if not os.path.exists(paths["wav"]):
-                if os.path.exists(paths["mp4"]):
-                    run_job_convert_audio(paths["mp4"], paths["wav"])
-                else:
-                    run_job_convert_audio(paths["mp3"], paths["wav"])
-            run_job_transcript(paths["wav"], paths["json"])
-        run_job_subtitles(paths["json"], paths["srt"])
-        run_job_chat(paths["json"], paths["txt"])
+    jobs = [
+        Job("wav", "mp4", run_job_convert_audio),
+        Job("json", "wav", run_job_transcript),
+        Job("srt", "json", run_job_subtitles),
+        Job("txt", "json", run_job_chat),
+        Job("png", "mp4", run_job_thumbnail),
+    ]
+
+    for job in jobs:
+        output_path = paths[job.output_ext]
+        input_path = paths[job.input_ext]
+        if not os.path.exists(output_path):
+            if job.input_ext == "mp4" and not os.path.exists(paths["mp4"]):
+                input_path = paths["mp3"]
+            logging.debug(f'"{input_path}" => "{output_path}"')
+            job.function(input_path, output_path)
+
+
+def list_jobs(path):
+    """
+    List a directory to retrieve filenames matching input extensions.
+    """
+
+    extensions = [f".{ext}" for ext in INPUT_EXTS]
+    files = os.listdir(path)
+    files = [name for name in files if pathlib.PurePosixPath(name).suffix in extensions]
+    names = list(set([pathlib.PurePosixPath(name).stem for name in files]))
+
+    # Ensure filenames don't contain unexpected characters to prevent command
+    # injection issues (ffmpeg options handling looks hazardous).
+    names = [name for name in names if re.match("^[a-z][a-z0-9._ -]*$", name, re.IGNORECASE)]
+
+    return names
 
 
 if __name__ == "__main__":
+    logging.basicConfig(level=logging.DEBUG)
     script_dir = os.path.dirname(os.path.realpath(__file__))
 
     if len(sys.argv) == 2:
@@ -85,6 +117,7 @@ if __name__ == "__main__":
         fp.write(f"{os.getpid()}")
 
     jobs = list_jobs(path)
+    logging.debug(f"jobs: {jobs}")
     for name in jobs:
         run_job(path, name)
 

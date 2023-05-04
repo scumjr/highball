@@ -55,7 +55,7 @@ const appendAlert = (message, type) => {
 function delete_files() {
   var filename = document.getElementById('delete-filename').textContent;
   var xhr = new XMLHttpRequest();
-  xhr.addEventListener("load", (event) => window.location.reload(), false);
+  xhr.addEventListener("load", (event) => window.location.assign("/"), false);
   xhr.open("DELETE", "/audio/" + filename);
   xhr.send({});
 }
@@ -66,8 +66,27 @@ function add_event_delete_file_modal() {
     el.addEventListener('show.bs.modal', function (event) {
 	var filename = event.relatedTarget.getAttribute('data-id');
 	var el = document.getElementById('delete-filename');
-	el.textContent = filename.replace(/\.[^.]+/, '.*');
+	el.textContent = filename + '.*';
     });
 }
 
+function add_event_preview_modal() {
+    // set filenames automatically
+    var el = document.getElementById('preview-modal');
+    el.addEventListener('show.bs.modal', function (event) {
+	var filename = event.relatedTarget.getAttribute('data-id');
+	var el = document.getElementById('preview-title');
+	el.textContent = filename;
+
+	var xhr = new XMLHttpRequest();
+	xhr.addEventListener("load", (event) => {
+	    var el = document.getElementById('preview-text');
+	    el.innerHTML = xhr.responseText.replaceAll('\n', '\n<br/>');
+	}, false);
+	xhr.open("GET", "/audio/" + filename);
+	xhr.send({});
+    });
+}
+
+add_event_preview_modal();
 add_event_delete_file_modal();

@@ -7,7 +7,8 @@ import sys
 from flask import Flask, Response, render_template, request, send_from_directory
 from werkzeug.utils import secure_filename
 
-MEDIA_PATH = "../../audio/"
+SCRIPT_DIR = os.path.dirname(os.path.realpath(__file__))
+MEDIA_PATH = os.path.join(SCRIPT_DIR, "../../audio")
 
 app = Flask(__name__)
 
@@ -19,17 +20,26 @@ if os.path.exists("custom.py"):
 
 
 def list_directory_(files):
-    extensions = [".mp3", ".mp4", ".srt", ".txt"]
+    extensions = [".mp3", ".mp4", ".png"]
     files = [name for name in files if pathlib.PurePosixPath(name).suffix in extensions]
     names = list(set([pathlib.PurePosixPath(name).stem for name in files]))
 
     result = []
     for name in names:
         line = {}
-        for ext in extensions:
-            if f"{name}{ext}" in files:
-                line[ext] = f"{name}{ext}"
-        result.append(line)
+        if f"{name}.mp4" in files:
+            media = f"{name}.mp4"
+        elif f"{name}.mp3" in files:
+            media = f"{name}.mp3"
+        else:
+            continue
+
+        if f"{name}.png" in files:
+            thumbnail = f"{name}.png"
+        else:
+            thumbnail = None
+
+        result.append((thumbnail, media))
 
     return result
 
@@ -37,7 +47,7 @@ def list_directory_(files):
 def list_directory(path):
     files = os.listdir(path)
     result = list_directory_(files)
-    result.sort(key=lambda line: min([os.stat(os.path.join(path, f)) for f in line.values()]), reverse=True)
+    result.sort(key=lambda t: os.stat(os.path.join(path, t[1])).st_mtime, reverse=True)
     return result
 
 
@@ -77,7 +87,9 @@ def run_jobs():
 
     if not running:
         if os.fork() == 0:
-            os.execvp("./run_jobs.py", ["run_jobs.py"])
+            script_name = "run_jobs.py"
+            script_path = os.path.join(SCRIPT_DIR, script_name)
+            os.execvp(script_path, [script_name])
             sys.exit(1)
 
     return running
@@ -97,7 +109,7 @@ def delete_files(filename):
     assert "/" not in filename
 
     # order is important (prevent run_jobs.py from detecting an incomplete job)
-    extensions = [".mp3", ".mp4", ".wav", ".json", ".txt", ".srt"]
+    extensions = [".mp3", ".mp4", ".png", ".wav", ".json", ".txt", ".srt"]
 
     root, _ = os.path.splitext(filename)
     files = [os.path.join(MEDIA_PATH, f"{root}{ext}") for ext in extensions]
@@ -110,7 +122,8 @@ def delete_files(filename):
 
 
 def strip_timestamps(filename, as_attachment):
-    with open(os.path.join(MEDIA_PATH, filename)) as fp:
+    real_filename = re.sub(r"\.nots\.txt$", ".txt", filename)
+    with open(os.path.join(MEDIA_PATH, real_filename)) as fp:
         data = fp.read()
     data = re.sub(r"\[.*\]\s+", "", data)
     headers = {}
@@ -125,7 +138,7 @@ def audio(filename):
         return delete_files(filename)
     else:
         as_attachment = "download" in request.args
-        if os.path.splitext(filename)[1] == ".txt" and "strip" in request.args:
+        if filename.endswith(".nots.txt"):
             return strip_timestamps(filename, as_attachment)
         else:
             return send_from_directory(MEDIA_PATH, filename, as_attachment=as_attachment)
