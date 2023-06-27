@@ -28,11 +28,11 @@
 		{% for ((thumbnail, media)) in lines -%}
 		<tr>
 		  {% if thumbnail -%}
-		  <td><a href="player/{{ media | urlencode }}"><img src="audio/{{ thumbnail | urlencode }}" class="rounded"/></a></td>
-		  <td class="align-middle"><a href="player/{{ media | urlencode }}">{{ media }}</a></td>
+		  <td class="col-2"><a href="player/{{ media | urlencode }}"><img src="audio/{{ thumbnail | urlencode }}" class="rounded"/></a></td>
+		  <td class="col-10 align-middle"><a href="player/{{ media | urlencode }}">{{ media }}</a></td>
 		  {% else -%}
-		  <td><div class="align-middle text-center"><div class="spinner-border m-1" role="status"><span class="visually-hidden">Loading...</span></div></div></td>
-		  <td class="align-middle">{{ media }}</td>
+		  <td><div class="col-2 align-middle text-center"><div class="spinner-border m-1" role="status"><span class="visually-hidden">Loading...</span></div></div></td>
+		  <td class="col-10 align-middle">{{ media }}</td>
 		  {% endif -%}
 		</tr>
 		{% endfor %}
